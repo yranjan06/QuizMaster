@@ -1,25 +1,21 @@
 import os
 
-
 class Config():
     DEBUG = False
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 class LocalDevelopmentConfig(Config):
-    SQLALCHEMY_DATABASE_URI = "sqlite:///database.sqlite3"
     DEBUG = True
+    SQLALCHEMY_DATABASE_URI = "sqlite:///quizmaster.sqlite3"
+    
+    # Flask-Security / Flask-Login
     SECURITY_PASSWORD_HASH = 'bcrypt'
     SECURITY_PASSWORD_SALT = 'thisshouldbekeptsecret'
-    SECRET_KEY = "shouldbekeyveryhidden"
+    SECRET_KEY = "superquizsecret"
     SECURITY_TOKEN_AUTHENTICATION_HEADER = 'Authentication-Token'
+    
+    # CSRF protection (used later for forms if needed)
     WTF_CSRF_ENABLED = True
-    UPLOAD_FOLDER = 'uploads'
-    
 
-
-
-
-
-
-
-    
+    # Optional: folder for exporting reports/CSVs
+    EXPORT_FOLDER = os.path.join(os.getcwd(), 'exports')

@@ -1,19 +1,36 @@
-from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+from flask_sqlalchemy import SQLAlchemy
+from flask_security import UserMixin, RoleMixin
 
 db = SQLAlchemy()
 
 # -----------------------------------------
-# User Model
+# Role Table for Flask-Security
 # -----------------------------------------
-class User(db.Model):
+roles_users = db.Table(
+    'roles_users',
+    db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
+    db.Column('role_id', db.Integer(), db.ForeignKey('role.id'))
+)
+
+class Role(db.Model, RoleMixin):
+    id = db.Column(db.Integer(), primary_key=True)
+    name = db.Column(db.String(80), unique=True)
+    description = db.Column(db.String(255))
+
+# -----------------------------------------
+# User Model with Security integration
+# -----------------------------------------
+class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
     full_name = db.Column(db.String(100))
     qualification = db.Column(db.String(100))
     dob = db.Column(db.Date)
-    is_admin = db.Column(db.Boolean, default=False)  # Admin flag
+    
+    active = db.Column(db.Boolean(), default=True)
+    roles = db.relationship('Role', secondary=roles_users, backref=db.backref('users', lazy='dynamic'))
 
     scores = db.relationship('Score', backref='user', lazy=True)
 
@@ -95,7 +112,7 @@ class Score(db.Model):
         return f"<Score {self.user_id} - Quiz {self.quiz_id}>"
 
 # -----------------------------------------
-# Optional: Activity Log for reminder jobs
+# User Activity (for reminders / reports)
 # -----------------------------------------
 class UserActivity(db.Model):
     id = db.Column(db.Integer, primary_key=True)

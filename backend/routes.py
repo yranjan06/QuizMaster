@@ -1,129 +1,73 @@
-from flask import request, jsonify, render_template_string
-from flask_security import verify_password, current_user, auth_token_required, login_user, logout_user
-from backend.models import db, User, Subject, Chapter, Quiz, Question, Score, UserRole
-import json
-from datetime import datetime
+from flask import current_app as app, jsonify, render_template, request
+from flask_security import auth_required, verify_password, hash_password
+from backend.models import db
 
-def register_routes(app):
-    
-    @app.route('/')
-    def home():
-        """Serve the main SPA"""
-        return app.send_static_file('index.html')
-    
-    @app.route('/<path:path>')
-    def catch_all(path):
-        """Catch all routes and serve the main SPA"""
-        return app.send_static_file('index.html')
+datastore = app.security.datastore
 
-    @app.route('/api/login', methods=['POST'])
-    def api_login():
-        """User login API"""
-        data = request.get_json()
-        username = data.get('username')  # email
-        password = data.get('password')
+@app.route('/')
+def home():
+    return render_template('index.html')  # Vue will take over from here
 
-        if not username or not password:
-            return jsonify({'message': 'Username and password are required'}), 400
+# -----------------------------------------
+# Protected Test Route
+# -----------------------------------------
+@app.get('/protected')
+@auth_required('token')
+def protected():
+    return '<h1>Accessible only by authenticated users</h1>'
 
-        user = User.query.filter_by(username=username).first()
-        if not user:
-            return jsonify({'message': 'User not found'}), 404
+# -----------------------------------------
+# Login Route (Token Based)
+# -----------------------------------------
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
 
-        if user.check_password(password):
-            # Update last login
-            user.last_login = datetime.utcnow()
-            db.session.commit()
-            
-            # Generate auth token (simple approach)
-            token = f"user-{user.id}-{datetime.utcnow().timestamp()}"
+    if not email or not password:
+        return jsonify({"message": "invalid inputs"}), 400
 
-            user_info = {
-                'token': token,
-                'username': user.username,
-                'role': user.role.value,
-                'id': user.id,
-                'full_name': user.full_name,
-                'is_admin': user.is_admin()
-            }
-            
-            return jsonify(user_info), 200
+    user = datastore.find_user(email=email)
+    if not user:
+        return jsonify({"message": "invalid email"}), 404
 
-        return jsonify({'message': 'Invalid password'}), 401
+    if verify_password(password, user.password):
+        return jsonify({
+            'token': user.get_auth_token(),
+            'email': user.email,
+            'role': user.roles[0].name,
+            'id': user.id
+        })
 
-    @app.route('/api/register', methods=['POST'])
-    def api_register():
-        """Register a new user API"""
-        data = request.get_json()
-        
-        username = data.get('username')  # email
-        password = data.get('password')
-        full_name = data.get('full_name')
-        qualification = data.get('qualification')
-        date_of_birth = data.get('date_of_birth')
+    return jsonify({'message': 'password wrong'}), 400
 
-        if not username or not password or not full_name:
-            return jsonify({'message': 'Username, password, and full name are required'}), 400
+# -----------------------------------------
+# Register Route (User Only)
+# -----------------------------------------
+@app.route('/register', methods=['POST'])
+def register():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+    role = data.get('role', 'user')  # default to 'user'
 
-        # Check if user already exists
-        user = User.query.filter_by(username=username).first()
-        if user:
-            return jsonify({'message': 'User already exists'}), 409
+    if not email or not password or role not in ['admin', 'user']:
+        return jsonify({"message": "invalid inputs"}), 400
 
-        try:
-            # Parse date of birth if provided
-            dob = None
-            if date_of_birth:
-                dob = datetime.strptime(date_of_birth, '%Y-%m-%d').date()
+    user = datastore.find_user(email=email)
+    if user:
+        return jsonify({"message": "user already exists"}), 409
 
-            # Create new user
-            user = User(
-                username=username,
-                email=username,  # Flask-Security requirement
-                full_name=full_name,
-                qualification=qualification,
-                date_of_birth=dob,
-                role=UserRole.USER,
-                active=True
-            )
-            user.set_password(password)
-            db.session.add(user)
-            db.session.commit()
-            
-            return jsonify({
-                'message': 'User registered successfully',
-                'user_id': user.id
-            }), 201
-            
-        except Exception as e:
-            db.session.rollback()
-            return jsonify({'message': f'Error creating user: {str(e)}'}), 500
-
-    @app.route('/api/subjects', methods=['GET'])
-    def get_subjects():
-        """Get all active subjects"""
-        subjects = Subject.query.filter_by(is_active=True).all()
-        result = []
-        for subject in subjects:
-            result.append({
-                'id': subject.id,
-                'name': subject.name,
-                'description': subject.description,
-                'chapter_count': subject.chapters.count()
-            })
-        return jsonify(result)
-
-    @app.route('/api/subjects/<int:subject_id>/chapters', methods=['GET'])
-    def get_chapters(subject_id):
-        """Get chapters for a subject"""
-        chapters = Chapter.query.filter_by(subject_id=subject_id, is_active=True)\
-                                .order_by(Chapter.order_index).all()
-        result = []
-        for chapter in chapters:
-            result.append({
-                'id': chapter.id,
-                'name': chapter.name,
-                'description': chapter.description,
-                'quiz_count': chapter.quizzes.count()
-            })
-        return jsonify(result)
+    try:
+        datastore.create_user(
+            email=email,
+            password=hash_password(password),
+            roles=[role],
+            active=True
+        )
+        db.session.commit()
+        return jsonify({"message": "user created"}), 200
+    except:
+        db.session.rollback()
+        return jsonify({"message": "error creating user"}), 500
