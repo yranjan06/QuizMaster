@@ -1,19 +1,27 @@
-from flask_security import hash_password
-from backend.models import db, User, UserRole, Subject, Chapter, Quiz, Question, Score
+from backend.models import db, User, UserRole, Subject, Chapter, Quiz, Question, Score, Role
 from datetime import datetime
 
 def initialize_database(app):
     with app.app_context():
         db.create_all()
 
+        # Create roles first (Flask-Security requirement)
+        if not Role.query.filter_by(name='admin').first():
+            admin_role = Role(name='admin', description='Administrator')
+            user_role = Role(name='user', description='Regular User')
+            db.session.add(admin_role)
+            db.session.add(user_role)
+            db.session.commit()
+
         # Create Admin user if not exists
         if not User.query.filter_by(username='admin@quizmaster.com').first():
             admin = User(
                 username='admin@quizmaster.com',
+                email='admin@quizmaster.com',
                 full_name='Admin User',
                 role=UserRole.ADMIN,
-                date_of_birth=datetime.strptime('1985-01-01', '%Y-%m-%d'),
-                is_active=True
+                date_of_birth=datetime.strptime('1985-01-01', '%Y-%m-%d').date(),
+                active=True
             )
             admin.set_password('admin123')
             db.session.add(admin)
@@ -22,11 +30,12 @@ def initialize_database(app):
         if not User.query.filter_by(username='student@quizmaster.com').first():
             student = User(
                 username='student@quizmaster.com',
+                email='student@quizmaster.com',
                 full_name='Test Student',
                 role=UserRole.USER,
                 qualification='10th Grade',
-                date_of_birth=datetime.strptime('2005-08-15', '%Y-%m-%d'),
-                is_active=True
+                date_of_birth=datetime.strptime('2005-08-15', '%Y-%m-%d').date(),
+                active=True
             )
             student.set_password('student123')
             db.session.add(student)
@@ -60,7 +69,7 @@ def initialize_database(app):
                 title='Algebra Basics Quiz',
                 description='Covers fundamentals of algebra',
                 chapter_id=chapter.id,
-                date_of_quiz=datetime.strptime('2024-11-01', '%Y-%m-%d'),
+                date_of_quiz=datetime.strptime('2024-11-01', '%Y-%m-%d').date(),
                 time_duration=10,
                 total_marks=5,
                 passing_marks=3,

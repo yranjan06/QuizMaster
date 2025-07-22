@@ -1,40 +1,24 @@
-from flask import request, jsonify, render_template, current_app, send_file
-from flask_security import auth_required, verify_password, hash_password, current_user
-from backend.models import db, User, Subject, Chapter, Quiz, Question, Score, UserActivity, ExportJob
-from werkzeug.utils import secure_filename
-from sqlalchemy.sql import func
-from werkzeug.security import check_password_hash
-import os
+from flask import request, jsonify, render_template_string
+from flask_security import verify_password, current_user, auth_token_required, login_user, logout_user
+from backend.models import db, User, Subject, Chapter, Quiz, Question, Score, UserRole
 import json
-from datetime import datetime, timedelta
-from celery import current_app as celery_app
-import csv
-import io
+from datetime import datetime
 
 def register_routes(app):
-    #############################################
-    # Basic Routes & Authentication
-    #############################################
     
-    @app.get('/')
+    @app.route('/')
     def home():
-        """Home page route"""
-        return render_template('index.html')
+        """Serve the main SPA"""
+        return app.send_static_file('index.html')
+    
+    @app.route('/<path:path>')
+    def catch_all(path):
+        """Catch all routes and serve the main SPA"""
+        return app.send_static_file('index.html')
 
-    @app.get('/admin')
-    def admin_dashboard():
-        """Admin dashboard route"""
-        return render_template('admin.html')
-
-    @app.get('/user')
-    def user_dashboard():
-        """User dashboard route"""
-        return render_template('user.html')
-
-    @app.route('/login', methods=['POST'])
-    def login():
-        """User login with role-specific information in the response"""
-        datastore = app.security.datastore
+    @app.route('/api/login', methods=['POST'])
+    def api_login():
+        """User login API"""
         data = request.get_json()
         username = data.get('username')  # email
         password = data.get('password')
@@ -42,26 +26,20 @@ def register_routes(app):
         if not username or not password:
             return jsonify({'message': 'Username and password are required'}), 400
 
-        user = datastore.find_user(username=username)
+        user = User.query.filter_by(username=username).first()
         if not user:
             return jsonify({'message': 'User not found'}), 404
 
-        if verify_password(password, user.password):
+        if user.check_password(password):
             # Update last login
             user.last_login = datetime.utcnow()
             db.session.commit()
-
-            # Log activity
-            activity = UserActivity(
-                user_id=user.id,
-                activity_type='login',
-                activity_data=json.dumps({'login_time': datetime.utcnow().isoformat()})
-            )
-            db.session.add(activity)
-            db.session.commit()
+            
+            # Generate auth token (simple approach)
+            token = f"user-{user.id}-{datetime.utcnow().timestamp()}"
 
             user_info = {
-                'token': user.get_auth_token(),
+                'token': token,
                 'username': user.username,
                 'role': user.role.value,
                 'id': user.id,
@@ -73,29 +51,22 @@ def register_routes(app):
 
         return jsonify({'message': 'Invalid password'}), 401
 
-    #############################################
-    # User Registration Routes
-    #############################################
-    
-    @app.route('/register', methods=['POST'])
-    def register_user():
-        """Register a new user"""
-        datastore = app.security.datastore
+    @app.route('/api/register', methods=['POST'])
+    def api_register():
+        """Register a new user API"""
         data = request.get_json()
         
-        # Extract user data
         username = data.get('username')  # email
         password = data.get('password')
         full_name = data.get('full_name')
         qualification = data.get('qualification')
         date_of_birth = data.get('date_of_birth')
 
-        # Validate required fields
         if not username or not password or not full_name:
             return jsonify({'message': 'Username, password, and full name are required'}), 400
 
         # Check if user already exists
-        user = datastore.find_user(username=username)
+        user = User.query.filter_by(username=username).first()
         if user:
             return jsonify({'message': 'User already exists'}), 409
 
@@ -108,11 +79,12 @@ def register_routes(app):
             # Create new user
             user = User(
                 username=username,
+                email=username,  # Flask-Security requirement
                 full_name=full_name,
                 qualification=qualification,
                 date_of_birth=dob,
                 role=UserRole.USER,
-                is_active=True
+                active=True
             )
             user.set_password(password)
             db.session.add(user)
@@ -126,3 +98,32 @@ def register_routes(app):
         except Exception as e:
             db.session.rollback()
             return jsonify({'message': f'Error creating user: {str(e)}'}), 500
+
+    @app.route('/api/subjects', methods=['GET'])
+    def get_subjects():
+        """Get all active subjects"""
+        subjects = Subject.query.filter_by(is_active=True).all()
+        result = []
+        for subject in subjects:
+            result.append({
+                'id': subject.id,
+                'name': subject.name,
+                'description': subject.description,
+                'chapter_count': subject.chapters.count()
+            })
+        return jsonify(result)
+
+    @app.route('/api/subjects/<int:subject_id>/chapters', methods=['GET'])
+    def get_chapters(subject_id):
+        """Get chapters for a subject"""
+        chapters = Chapter.query.filter_by(subject_id=subject_id, is_active=True)\
+                                .order_by(Chapter.order_index).all()
+        result = []
+        for chapter in chapters:
+            result.append({
+                'id': chapter.id,
+                'name': chapter.name,
+                'description': chapter.description,
+                'quiz_count': chapter.quizzes.count()
+            })
+        return jsonify(result)
