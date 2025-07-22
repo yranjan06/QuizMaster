@@ -1,175 +1,84 @@
-// frontend/pages/RegisterPage.js
-export function RegisterPage() {
+// frontend/pages/HomePage.js
+import { HeroSection } from '../components/HeroSection.js';
+
+export function HomePage() {
     return `
-        <div class="container py-5">
-            <div class="row justify-content-center">
-                <div class="col-md-8">
-                    <div class="card shadow">
-                        <div class="card-body p-5">
-                            <div class="text-center mb-4">
-                                <i class="fas fa-user-plus text-success" style="font-size: 3rem;"></i>
-                                <h3 class="mt-3">Register करें</h3>
-                                <p class="text-muted">नया account बनाएं और शुरू करें</p>
+        ${HeroSection()}
+        
+        <section class="py-5">
+            <div class="container">
+                <h2 class="text-center mb-5">मुख्य विशेषताएं</h2>
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="card feature-card h-100 text-center p-4">
+                            <div class="mb-3">
+                                <i class="fas fa-brain text-primary" style="font-size: 3rem;"></i>
                             </div>
-                            
-                            <div id="registerAlert"></div>
-                            
-                            <form id="registerForm">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="fullName" class="form-label">पूरा नाम *</label>
-                                            <input type="text" class="form-control" id="fullName" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="email" class="form-label">Email Address *</label>
-                                            <input type="email" class="form-control" id="email" required>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="password" class="form-label">Password *</label>
-                                            <input type="password" class="form-control" id="password" required minlength="6">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="confirmPassword" class="form-label">Confirm Password *</label>
-                                            <input type="password" class="form-control" id="confirmPassword" required>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="qualification" class="form-label">शिक्षा</label>
-                                            <select class="form-select" id="qualification">
-                                                <option value="">Select...</option>
-                                                <option value="10th">10th</option>
-                                                <option value="12th">12th</option>
-                                                <option value="Graduate">Graduate</option>
-                                                <option value="Post Graduate">Post Graduate</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="dateOfBirth" class="form-label">जन्म तिथि</label>
-                                            <input type="date" class="form-control" id="dateOfBirth">
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="mb-3 form-check">
-                                    <input type="checkbox" class="form-check-input" id="termsCheck" required>
-                                    <label class="form-check-label" for="termsCheck">
-                                        मैं <a href="#" class="text-primary">Terms & Conditions</a> से सहमत हूं
-                                    </label>
-                                </div>
-                                
-                                <div class="d-grid">
-                                    <button type="submit" class="btn btn-success btn-lg" id="registerBtn">
-                                        <i class="fas fa-user-plus me-2"></i>Register करें
-                                    </button>
-                                </div>
-                            </form>
-                            
-                            <hr class="my-4">
-                            
-                            <div class="text-center">
-                                <p class="mb-0">पहले से account है? 
-                                    <a href="/login" data-link class="text-primary">Login करें</a>
-                                </p>
+                            <h5 class="card-title">Smart Questions</h5>
+                            <p class="card-text text-muted">
+                                विभिन्न subjects और chapters के लिए carefully curated MCQ questions।
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="card feature-card h-100 text-center p-4">
+                            <div class="mb-3">
+                                <i class="fas fa-chart-line text-success" style="font-size: 3rem;"></i>
+                            </div>
+                            <h5 class="card-title">Performance Analytics</h5>
+                            <p class="card-text text-muted">
+                                Detailed charts और reports के साथ अपनी progress को track करें।
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="card feature-card h-100 text-center p-4">
+                            <div class="mb-3">
+                                <i class="fas fa-stopwatch text-warning" style="font-size: 3rem;"></i>
+                            </div>
+                            <h5 class="card-title">Timed Quizzes</h5>
+                            <p class="card-text text-muted">
+                                Real exam जैसा experience पाने के लिए timer-based quizzes।
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="py-5 bg-light">
+            <div class="container">
+                <div class="row align-items-center">
+                    <div class="col-lg-6">
+                        <h3>Ready to Start Your Journey?</h3>
+                        <p class="text-muted">
+                            अभी register करें और हजारों questions का access पाएं। 
+                            Personalized dashboard के साथ अपनी performance को improve करें।
+                        </p>
+                        <a href="/register" data-link class="btn btn-primary btn-lg">
+                            <i class="fas fa-user-plus me-2"></i>Free Registration
+                        </a>
+                    </div>
+                    <div class="col-lg-6 text-center">
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <h4 class="text-primary">1000+</h4>
+                                <small class="text-muted">Questions</small>
+                            </div>
+                            <div class="col-4">
+                                <h4 class="text-success">50+</h4>
+                                <small class="text-muted">Subjects</small>
+                            </div>
+                            <div class="col-4">
+                                <h4 class="text-warning">100+</h4>
+                                <small class="text-muted">Users</small>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
     `;
-}
-
-// Initialize register form
-document.addEventListener('DOMContentLoaded', () => {
-    if (window.location.pathname === '/register') {
-        initRegisterForm();
-    }
-});
-
-function initRegisterForm() {
-    const form = document.getElementById('registerForm');
-    if (!form) return;
-
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const formData = {
-            full_name: document.getElementById('fullName').value,
-            username: document.getElementById('email').value,
-            password: document.getElementById('password').value,
-            qualification: document.getElementById('qualification').value,
-            date_of_birth: document.getElementById('dateOfBirth').value,
-        };
-        
-        const confirmPassword = document.getElementById('confirmPassword').value;
-        const registerBtn = document.getElementById('registerBtn');
-        const alertDiv = document.getElementById('registerAlert');
-        
-        // Validate passwords match
-        if (formData.password !== confirmPassword) {
-            alertDiv.innerHTML = `
-                <div class="alert alert-danger">
-                    <i class="fas fa-exclamation-triangle me-2"></i>Passwords do not match!
-                </div>
-            `;
-            return;
-        }
-        
-        // Show loading
-        registerBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating account...';
-        registerBtn.disabled = true;
-        
-        try {
-            const response = await fetch('/register', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(formData),
-            });
-            
-            const data = await response.json();
-            
-            if (response.ok) {
-                alertDiv.innerHTML = `
-                    <div class="alert alert-success">
-                        <i class="fas fa-check me-2"></i>Registration successful! Redirecting to login...
-                    </div>
-                `;
-                
-                setTimeout(() => {
-                    window.location.href = '/login';
-                }, 2000);
-                
-            } else {
-                throw new Error(data.message || 'Registration failed');
-            }
-            
-        } catch (error) {
-            alertDiv.innerHTML = `
-                <div class="alert alert-danger">
-                    <i class="fas fa-exclamation-triangle me-2"></i>${error.message}
-                </div>
-            `;
-        } finally {
-            registerBtn.innerHTML = '<i class="fas fa-user-plus me-2"></i>Register करें';
-            registerBtn.disabled = false;
-        }
-    });
 }

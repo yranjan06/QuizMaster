@@ -3,7 +3,7 @@ import { Router } from './utils/router.js';
 import { Store } from './utils/store.js';
 import { Navbar } from './components/Navbar.js';
 import { Footer } from './components/Footer.js';
-import { HomePage } from './pages/HomePage.js';
+import { HomePage } from './pages/RegisterPage.js';
 import { LoginPage } from './pages/LoginPage.js';
 import { RegisterPage } from './pages/RegisterPage.js';
 
